@@ -613,6 +613,7 @@ def main():
         'simple-question', help='Generate SimpleQuestions answers')
     eval_parser.add_argument('--input-dataset', '-i', help='Input dataset')
     eval_parser.add_argument('--store', '-s', default='wikidata-extension')
+    eval_parser.add_argument('--search', '-sh', default='wikidata-wapi')
     eval_parser.add_argument('--limit', '-l')
     eval_parser.add_argument('--config', '-c', required=True)
     eval_parser.add_argument('--block-list', '-bl', help='A txt file containing a list of questions to ignore', )
