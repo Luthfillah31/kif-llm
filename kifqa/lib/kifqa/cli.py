@@ -224,9 +224,15 @@ def generate_simple_question_answer(args):
     store = _mk_store(args.store)
     search = _mk_search(args.search)
 
-    kifqa = KIFQA(store=store,
-                        search=search,
-                        config_path=args.config)
+    with open(args.config, 'r') as f:
+        config_data = json.load(f)
+    
+    # Pass the config data as keyword arguments to KIFQA
+    kifqa = KIFQA(
+        store=store,
+        search=search,
+        **config_data
+    )
     from_file = args.from_file
     cache_entries = set()
     if from_file:
