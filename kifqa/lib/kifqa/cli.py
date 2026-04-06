@@ -277,13 +277,21 @@ def generate_simple_question_answer(args):
             }
 
             try:
-                stmts = list(kifqa.query(question, timeout=TIMETOUT))
+                # 1. Grab the limit argument (default to 1 for SimpleQuestions)
+                limit = int(args.limit) if args.limit else 3
+                
+                # 2. DO NOT use list(). Use the iterator directly.
+                # Pass the limit into the query so kif_lib knows to stop early
+                stmts_iterator = kifqa.query(question, limit=limit, timeout=TIMETOUT)
 
                 count = 0
-                for stmt in stmts:
+                for stmt in stmts_iterator:
+                    if count >= limit:
+                        break # 3. Hard stop once we hit the limit
+                        
                     count += 1
-
                     jsonl['statements'].append(stmt.to_ast())
+
                 jsonl['count'] = count
                 filters = []
 
