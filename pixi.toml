@@ -1,0 +1,18 @@
+[workspace]
+authors = ["Luthfi <luthfillahatar@gmail.com>"]
+channels = ["conda-forge"]
+name = "kif-llm"
+platforms = ["win-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.11.*"
+ipykernel = ">=7.2.0,<8"
+
+[pypi-dependencies]
+kif-lib = ">=0.12.0, <0.13.0"
+langchain-ollama = "*"
+kbel = { path = "./kbel", editable = true }
+kifqa = { path = "./kifqa", editable = true }

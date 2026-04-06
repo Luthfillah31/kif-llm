@@ -251,7 +251,7 @@ class KIFQA:
             self,
             label: str,
             question: str,
-            candidates_limit=10) -> list[Tuple[str, str, Item]]:
+            candidates_limit=3) -> list[Tuple[str, str, Item]]:
         try:
             self.search.limit = candidates_limit
             items = self._disambiguator.disambiguate_item(
@@ -355,7 +355,8 @@ class KIFQA:
             if not disamb_props:
                 raise ValueError(f'Could not disambiguate property {p}')
 
-            for label, desc, prop in disamb_props:
+            if disamb_props:
+                label, desc, prop = disamb_props[0]
                 if (label, desc, prop) not in self._properties:
                     self._properties.append((label, desc, prop))
                 disamb_triple = (s, prop, o, constraints)
@@ -365,21 +366,17 @@ class KIFQA:
                 if f := self.to_filter(disamb_triple):
                     self._kif_filters.append(f)
 
-        with ThreadPoolExecutor() as executor:
-            tasks = []
-            for item_label, item_desc, item_id in disam_items:
-                if to_be_found == 'object':
-                    args = (item_id, item_label, item_desc, triple.property, None, None)
-                else:
-                    args = (None, None, item_desc, triple.property, item_id, item_label)
+        # FIX: Replaced ThreadPoolExecutor with a sequential loop to prevent Wikidata DDOS bans
+        for item_label, item_desc, item_id in disam_items:
+            if to_be_found == 'object':
+                args = (item_id, item_label, item_desc, triple.property, None, None)
+            else:
+                args = (None, None, item_desc, triple.property, item_id, item_label)
 
-                tasks.append(executor.submit(disambiguate_one_property, *args))
-
-            for future in as_completed(tasks):
-                try:
-                    future.result()
-                except Exception as e:
-                    logging.warning(f'Error in threaded disambiguation: {e}')
+            try:
+                disambiguate_one_property(*args)
+            except Exception as e:
+                logging.warning(f'Error in disambiguation: {e}')
 
 
     @retry(stop=stop_after_attempt(RETRY_ATTEMPTS), wait=wait_fixed(1))
@@ -525,10 +522,20 @@ class KIFQA:
         self._triple_pattern = triples
         if not triples:
             raise ValueError(f'Could not extract triples from question: `{question}`')
+        
         kif_filters = self.generate_filters(triples=triples, question=question)
+        
         for filter in kif_filters:
-            yield from self.filter(filter, *args, **kwargs)
-
+            found_any = False
+            for it in self.filter(filter, *args, **kwargs):
+                yield it
+                found_any = True
+            
+            # POST-QUERY RANKING LOGIC:
+            # If this filter found results, don't bother with the lower-ranked filters.
+            if found_any:
+                break
+            
     def query_s(self, question: str, *args, **kwargs) -> Iterator[Entity]:
         triples = self.get_logical_form(question)
         if not triples:

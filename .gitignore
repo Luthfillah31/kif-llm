@@ -12,3 +12,6 @@ kbc
 _ctxgen
 data
 dist
+# pixi environments
+.pixi/*
+!.pixi/config.toml
