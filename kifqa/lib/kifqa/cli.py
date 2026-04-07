@@ -278,7 +278,7 @@ def generate_simple_question_answer(args):
 
             try:
                 # 1. Grab the limit argument (default to 1 for SimpleQuestions)
-                limit = int(args.limit) if args.limit else 3
+                limit = 10
                 
                 # 2. DO NOT use list(). Use the iterator directly.
                 # Pass the limit into the query so kif_lib knows to stop early
